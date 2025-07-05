@@ -11,8 +11,10 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
 
+
 jobs:
   deploy:
+    secrets: inherit
     runs-on: ubuntu-latest
     
     steps:
