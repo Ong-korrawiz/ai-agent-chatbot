@@ -116,7 +116,7 @@ def handle_message(event: MessageEvent):
             [Message(role="user", content=event.message.text)]
         )
 
-        reply_message = TextMessage(text=response)
+        reply_message = TextMessage(text=response + "peko")
 
         MESSAGE_HISTORY.history.append(
             Message(role="assistant", content=response)
