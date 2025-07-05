@@ -22,9 +22,12 @@ jobs:
 
       # TODO: remove this after testing
       - name: Check secrets and environment variables
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
-          echo 'GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}'
-          echo 'GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}'
+          echo 'GCP_PROJECT_ID: $GCP_PROJECT_ID'
+          echo 'GCP_SA_KEY: $GCP_SA_KEY}'
 
       - id: 'auth'
         name: Configure GCP credentials
