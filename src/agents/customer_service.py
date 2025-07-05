@@ -2,10 +2,10 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from agents.base_agent import BaseAgent
-from utils.loader import PdfFile
-from utils.common import ConfigUtils
-from settings import CONFIG_FILE, PRICE_SHEET_PATH, OPERATOR_PROMPT_PATH
+from src.agents.base_agent import BaseAgent
+from src.utils.loader import PdfFile
+from src.utils.common import ConfigUtils
+from src.settings import CONFIG_FILE, PRICE_SHEET_PATH, OPERATOR_PROMPT_PATH
   # Adjust the path as needed
 
 

@@ -22,9 +22,9 @@ from linebot.v3.messaging import TextMessage, Emoji
 from logging import getLogger
 from pprint import pprint
 
-from _types import Message
-from agents.customer_service import get_operator_agent
-from db import ChatHistory, User
+from src._types import Message
+from src.agents.customer_service import get_operator_agent
+# from src.db import ChatHistory, User
 
 logger = getLogger(__name__)
 
@@ -73,7 +73,7 @@ def handle_message(event: MessageEvent):
     if not event.message.text:
         print("Received an empty message.")
         return None
-    pprint(f"Event>>>> {event}")
+
     with ApiClient(configuration) as api_client:
 
         operator_agent = get_operator_agent()
@@ -82,34 +82,37 @@ def handle_message(event: MessageEvent):
         MESSAGE_HISTORY.history.append(
             Message(role="user", content=event.message.text)
         )
-        user_db = User()
-        if not user_db.has_user(event.source.user_id):
-            logger.info(f"User {event.source.user_id} does not exist, inserting into database")
-            user_db.insert(
-                uuid=event.source.user_id,
-                name="",
-                metadata=""
-            )
+        # user_db = User()
+        # if not user_db.has_user(event.source.user_id):
+        #     logger.info(f"User {event.source.user_id} does not exist, inserting into database")
+        #     user_db.insert(
+        #         uuid=event.source.user_id,
+        #         name="",
+        #         metadata=""
+        #     )
 
-        user_chat = ChatHistory().insert(
-            user_uuid=event.source.user_id,
-            role="user",
-            content=event.message.text
-        )
+        # user_chat = ChatHistory().insert(
+        #     user_uuid=event.source.user_id,
+        #     role="user",
+        #     content=event.message.text
+        # )
         logger.info("Done inserting user message into chat history")
+        
+        response = operator_agent.invoke(
+            [Message(role="user", content=event.message.text)]
+        )
 
-        response = f"Received your message: {event.message.text} id: {len(MESSAGE_HISTORY.history)}"
         reply_message = TextMessage(text=response)
 
         MESSAGE_HISTORY.history.append(
             Message(role="assistant", content=response)
         )
 
-        bot_chat = ChatHistory().insert(
-            user_uuid=event.source.user_id,
-            role="assistant",
-            content=response
-        )
+        # bot_chat = ChatHistory().insert(
+        #     user_uuid=event.source.user_id,
+        #     role="assistant",
+        #     content=response
+        # )
 
         logger.info("Done inserting bot message into chat history")
 

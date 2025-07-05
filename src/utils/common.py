@@ -1,7 +1,7 @@
 import yaml
 import os
 
-from settings import CONFIG_FILE
+from src.settings import CONFIG_FILE
 
 
 class ConfigUtils:

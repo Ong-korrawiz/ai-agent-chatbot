@@ -3,8 +3,8 @@ import json
 from typing import List, Dict, Any, Optional, Union
 
 from pydantic import BaseModel
-from utils.common import ConfigUtils
-from _types import Message
+from src.utils.common import ConfigUtils
+from src._types import Message
 
 
 class BaseAgent:
