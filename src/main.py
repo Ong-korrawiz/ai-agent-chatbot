@@ -37,8 +37,8 @@ load_dotenv(override=True)
 # # LINE Secret Key
 # get_channel_secret = os.getenv('CHANNEL_SECRET')
 
-get_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
-get_channel_secret = os.getenv('LINE_CHANNEL_SECRET')
+get_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN').replace('"', '')
+get_channel_secret = os.getenv('LINE_CHANNEL_SECRET').replace('"', '')
 
 configuration = Configuration(access_token=get_access_token)
 handler = WebhookHandler(channel_secret=get_channel_secret)
@@ -56,9 +56,23 @@ async def callback(request: Request):
     
     print(f"Request body: {body_str}")
 
+    # print channel secret and access token for debugging
+    print(f"Channel Secret: {get_channel_secret}")
+    print(f"Access Token: {get_access_token}")
+
     try:
         handler.handle(body_str, x_line_signature)
-    except InvalidSignatureError:
+    except InvalidSignatureError as e:
+        print(f"Invalid signature error: {str(e)}")
+        # Log the error for debugging
+        logger.error(f"Invalid signature error: {str(e)}")
+        pprint({
+            "error": "Invalid signature",
+            "x_line_signature": x_line_signature,
+            "body": body_str,
+            "channel_secret": get_channel_secret,
+            "access_token": get_access_token
+        })
         print("Invalid signature. Please check your channel access token/channel secret.")
         raise HTTPException(status_code=400, detail="Invalid signature.")
 
@@ -130,4 +144,4 @@ def handle_message(event: MessageEvent):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
