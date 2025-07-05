@@ -1,0 +1,56 @@
+name: Deploy ai agent app to Cloud Run
+
+on:
+  pull_request:
+    branches: [ master]
+  push:
+    branches:
+      - master
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # TODO: remove this after testing
+      - name: Check secrets and environment variables
+        run: |
+          echo "GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}"
+          echo "GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}"
+          echo "PROJECT_ID: ${{ env.PROJECT_ID }}"
+
+      - id: 'auth'
+        name: Configure GCP credentials
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          token_format: 'access_token'
+          
+      - name: Log in to GCR
+        uses: docker/login-action@v1
+        with:
+          registry: us-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
+          
+      - name: Build and Push Docker image to GCR
+        run: |
+          docker build -t us-docker.pkg.dev/${{ env.PROJECT_ID }}/ai-agent-chatbot/ai-agent-chatbot:${{ github.sha }} .
+          docker push us-docker.pkg.dev/${{ env.PROJECT_ID }}/ai-agent-chatbotgithub-to-cr/ai-agent-chatbot:${{ github.sha }}
+      
+      - name: Deploy to Cloud Run
+        run: |
+          terraform init -input=true
+          terraform state list
+          terraform plan -var="image_tag=${{ github.sha }}"
+          terraform apply -var="image_tag=${{ github.sha }}" -auto-approve
+
+# us-docker.pkg.dev/psenapati-sample/github-to-cr
