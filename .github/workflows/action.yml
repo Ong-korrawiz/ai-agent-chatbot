@@ -8,13 +8,12 @@ on:
       - master
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
-
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+  PROJECT_ID: ${{ env.PROJECT_ID }}
 
 jobs:
   deploy:
-    secrets: inherit
     runs-on: ubuntu-latest
     
     steps:
@@ -25,7 +24,7 @@ jobs:
       # TODO: remove this after testing
       - name: Check secrets and environment variables
         run: |
-          echo "GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}"
+          echo "GCP_PROJECT_ID: $GCP_PROJECT_ID"
           echo "GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}"
           echo "PROJECT_ID: ${{ env.PROJECT_ID }}"
 
