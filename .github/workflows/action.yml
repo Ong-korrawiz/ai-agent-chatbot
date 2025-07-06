@@ -33,8 +33,8 @@ jobs:
         name: Configure GCP credentials
         uses: google-github-actions/auth@v2 
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-          token_format: 'access_token'
+          workload_identity_provider: 'projects/677706901693/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+          service_account: ai-chatbot-owner@ai-chatbot-464615.iam.gserviceaccount.com
           
       - name: Log in to GCR
         uses: docker/login-action@v1
