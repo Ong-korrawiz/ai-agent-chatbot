@@ -37,7 +37,7 @@ jobs:
         uses: google-github-actions/auth@v2 
         with:
           workload_identity_provider: 'projects/677706901693/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-          service_account: ai-chatbot-owner@ai-chatbot-464615.iam.gserviceaccount.com
+          service_account: 'ai-chatbot-owner@ai-chatbot-464615.iam.gserviceaccount.com'
           
       - name: Log in to GCR
         uses: docker/login-action@v1
