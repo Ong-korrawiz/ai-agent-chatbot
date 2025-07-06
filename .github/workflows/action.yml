@@ -49,8 +49,7 @@ jobs:
       - name: Build and Push Docker image to GCR
         run: |
           docker build -t us-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/ai-agent-chatbot/ai-agent-chatbot:${{ github.sha }} .
-          docker tag us-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/ai-agent-chatbot/ai-agent-chatbot:${{ github.sha }}
-          docker push us-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/ai-agent-chatbotgithub-to-cr/ai-agent-chatbot:${{ github.sha }}
+          docker push us-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/ai-agent-chatbot/ai-agent-chatbot:${{ github.sha }}
       
       - name: Deploy to Cloud Run
         run: |
