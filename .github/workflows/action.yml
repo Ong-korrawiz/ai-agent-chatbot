@@ -45,6 +45,9 @@ jobs:
           registry: us-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker to use gcloud as credential helper
+        run: gcloud auth configure-docker us-docker.pkg.dev
           
       - name: Build and Push Docker image to GCR
         run: |
