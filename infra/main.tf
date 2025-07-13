@@ -1,12 +1,12 @@
 provider "google" {
-  project = "${var.project_id}"
-  region  = "${var.project_region}"
-  zone    = "${var.project_zone}"
+  project = "ai-chatbot-bucket"
+  region  = "us-central1"
+  zone    = "us-central1-a"
 }
 
 terraform {
  backend "gcs" {
-   bucket  = "${var.bucket_name}"
+   bucket  = "ai-chatbot-bucket"
    prefix  = "/"
  }
 }

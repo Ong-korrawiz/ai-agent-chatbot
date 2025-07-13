@@ -5,9 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+    "cloud-sql-python-connector>=1.18.3",
     "fastapi[standard]>=0.115.14",
     "functions-framework>=3.8.3",
     "line-bot-sdk>=3.17.1",
     "openai>=1.93.0",
+    "pg8000>=1.31.2",
     "pymupdf4llm>=0.0.26",
+    "pymysql>=1.1.1",
+    "sqlalchemy>=2.0.41",
 ]

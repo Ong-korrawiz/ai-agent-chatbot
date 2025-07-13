@@ -68,7 +68,7 @@ class BaseAgent:
         if not self.messages:
             return []
         messages = self.get_messages()
-        return [msg.model_dump() for msg in messages]
+        return [{"role": msg.role, "content": msg.content} for msg in messages]
 
 
     def invoke(
@@ -92,7 +92,7 @@ class BaseAgent:
         """
         messages = self.get_dict_messages()
         messages.extend(
-            [msg.model_dump() for msg in input_messages]
+            [{"role": msg.role, "content": msg.content} for msg in input_messages]
         )
         
         try:
