@@ -38,3 +38,20 @@ class ConfigUtils:
             str: The value of the environment variable or default value.
         """
         return os.getenv(key, default)
+    
+class CommonUtils:
+
+    @staticmethod
+    def is_folder_empty(folder_path):
+        """
+        Checks if a folder is empty.
+
+        Parameters:
+        folder_path (str): The path to the folder.
+
+        Returns:
+        bool: True if the folder is empty, False otherwise.
+        """
+        if not os.path.isdir(folder_path):
+            return False    
+        return len(os.listdir(folder_path)) == 0

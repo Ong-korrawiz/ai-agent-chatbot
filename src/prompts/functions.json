@@ -1,0 +1,33 @@
+{
+    "add_contact_info":{
+        "type":"function",
+        "name": "add_contact_info",
+        "description": "Add contact information to the Google Sheet",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the client"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email address of the client"
+                },
+                "phone": {
+                    "type": "string",
+                    "description": "Phone number of the client"
+                },
+                "address": {
+                    "type": "string",
+                    "description": "Address of the client"
+                },
+                "additional_requirements": {
+                    "type": "string",
+                    "description": "Any additional requirements from the client"
+                }
+            },
+            "required": ["name", "email", "phone", "address"]
+        }
+    }
+}

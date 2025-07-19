@@ -4,8 +4,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.agents.base_agent import BaseAgent
 from src.utils.loader import PdfFile
-from src.utils.common import ConfigUtils
+from src.utils.common import ConfigUtils, CommonUtils
 from src.settings import CONFIG_FILE, PRICE_SHEET_PATH, OPERATOR_PROMPT_PATH
+from src.gcp.drive import GoogleDrive
   # Adjust the path as needed
 
 
@@ -18,6 +19,13 @@ def get_operator_agent() -> BaseAgent:
     config = ConfigUtils.load_config(file_path=CONFIG_FILE)
     
     # Load the price sheet
+    if CommonUtils.is_folder_empty(PRICE_SHEET_PATH.parent):
+        google_drive = GoogleDrive()
+        file = google_drive.download_file(
+            file_id="1fFL7FWeYu1lxeVxg2jc6msngAeFDnvs9",
+            target_folder="src/data"
+        )
+
     pdf_file = PdfFile(file_path=PRICE_SHEET_PATH)
     price_sheet_content = pdf_file.get_markdown()
     
@@ -33,3 +41,4 @@ def get_operator_agent() -> BaseAgent:
     )
     
     return operator_agent
+

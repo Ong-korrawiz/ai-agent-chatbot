@@ -19,7 +19,7 @@ user_table = Table(
 
 # Chat history table
 chat_history_table = Table(
-    'chat_history',
+    'chathistory',
     metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('user_uuid', String(36), ForeignKey('user.user_uuid'), nullable=False),
@@ -29,3 +29,4 @@ chat_history_table = Table(
     Column('messenger_timestamp', String, nullable=True)
 )
 
+all_tables_names = metadata.tables.keys()

@@ -18,7 +18,7 @@ from src.settings import (
     DB_PASSWORD,
     DB_NAME,
 )
-from src.db import metadata, chat_history_table, user_table
+from src.db import metadata, chat_history_table, user_table, all_tables_names
 from src._types import Message
 
 
@@ -34,7 +34,7 @@ class CloudSql():
         self._db_password = DB_PASSWORD
         self._db_name = DB_NAME
         self._driver = "pg8000"
-        self._tables = ["chat_history", "user"]
+        self._tables = all_tables_names
 
     def get_conn(self):
         conn = self._connector.connect(
@@ -49,7 +49,7 @@ class CloudSql():
     def get_engine(self):
         """Create a SQLAlchemy engine for the Cloud SQL instance"""
         return sqlalchemy.create_engine(
-            f"postgresql+pg8000://",
+            "postgresql+pg8000://",
             creator=self.get_conn,
         )
 
@@ -59,6 +59,7 @@ class CloudSqlManager(CloudSql):
         self.engine = self.get_engine()
 
     def has_table(self, table_name: str) -> bool:
+        print("self.engine", self.engine, "table name", table_name)
         return sqlalchemy.inspect(self.engine).has_table(table_name)
     
     def validate_tables(self):
@@ -98,6 +99,7 @@ class CloudSqlManager(CloudSql):
 
 class ChatHistoryTable(CloudSql):
     def __init__(self, engine=None):
+        super().__init__()
         self.engine = engine if engine else self.get_engine()
         self._conn = self.engine.connect()
 
@@ -128,10 +130,11 @@ class ChatHistoryTable(CloudSql):
             Message(role=msg.role, content=msg.content, messenger_timestamp=msg.messenger_timestamp) for msg in messages 
             if msg.role in ["user", "assistant"]
         ]
-    
+
 
 class UserTable(CloudSql):
     def __init__(self, engine=None):
+        super().__init__()
         self.engine = self.get_engine() if engine is None else engine
         self._conn = self.engine.connect()
 
@@ -140,11 +143,6 @@ class UserTable(CloudSql):
         """Insert a new user into the database"""
         try:
             self._conn.execute(
-                # user_table.insert().values(
-                #     user_uuid=user_uuid,
-                #     user_name=name if name else "",
-                #     user_metadata=metadata if metadata else ""
-                # )
                 insert(user_table).values(
                     user_uuid=user_uuid,
                     user_name=name if name else "",
@@ -183,21 +181,5 @@ class UserTable(CloudSql):
         return result
 
 
-if __name__ == "__main__":
-    manager = CloudSqlManager()
-    manager.re_create_tables()
-    # manager.create_table()
-    # print("Tables created successfully.")
-    
-    # chat_history = ChatHistoryTable()
-    # user_table_sql = UserTable()
 
-    # user_table_sql.insert(
-    #     user_uuid="123e4567-e89b-12d3-a456-426614174000",
-    #     name="Test User",
-    #     metadata='{"key": "value"}'
-    # )
 
-    # # Example usage
-    # all_users = user_table_sql.read(user_uuid="123e4567-e89b-12d3-a456-426614174000")
-    # print("All users:", all_users)

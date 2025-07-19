@@ -4,8 +4,9 @@ from linebot import LineBotApi
 
 from src.settings import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET
 from src.gcp.sql import ChatHistoryTable, UserTable, CloudSqlManager
+from src.gcp.gsheet import ClientTagSheet
 from src.agents.customer_service import get_operator_agent
-from src._types import Message
+from src._types import Message, Platform
 from linebot.v3.messaging import (
     ApiClient, 
     MessagingApi, 
@@ -19,14 +20,18 @@ from src.agents.functions import add_contact_info
 
 
 class LineApp:
-    def __init__(self, channel_access_token: str, channel_secret: str):
-        self.channel_access_token = channel_access_token
+    def __init__(
+            self, 
+            access_token: str=LINE_CHANNEL_ACCESS_TOKEN, 
+            channel_secret: str=LINE_CHANNEL_SECRET):
+        self.channel_access_token = access_token
         self.channel_secret = channel_secret
-        self.line_bot_api = LineBotApi(channel_access_token)
+        self.line_bot_api = LineBotApi(self.channel_access_token)
+        self.configuration = Configuration(access_token=self.channel_access_token)
 
-    async def send_message(self, user_id: str, message: str):
+    async def send_follow_up_message(self, user_id: str, message: str):
         # Logic to send a message using LINE Messaging API
-        pass
+        self.send_message(user_id, message)
 
     def reply_message(self, user_id: str, message: str, reply_token: str):
         """
@@ -35,17 +40,15 @@ class LineApp:
         Args:
             user_id (str): The LINE user ID.
             message (str): The message to send.
+            reply_token (str): The token to reply to the user.
         """
         timestamp = str(int(time.time()))
         user_profile = self.line_bot_api.get_profile(user_id)
-
+ 
         chat_history = ChatHistoryTable()
         user_table = UserTable()
 
-        configuration = Configuration(access_token=self.channel_access_token)
-
-
-        with ApiClient(configuration) as api_client:
+        with ApiClient(self.configuration) as api_client:
 
             operator_agent = get_operator_agent()
             line_bot_api = MessagingApi(api_client)        
@@ -64,37 +67,36 @@ class LineApp:
                 )
             )
 
+            client_tag_sheet = ClientTagSheet()
+            if not client_tag_sheet.has_profle(user_profile.display_name):
+                client_tag_sheet.add_new_profile(
+                    profile_name=user_profile.display_name,
+                    user_id=user_id,
+                    platform=Platform.LINE
+                )
+
+
+            else:
+                client_tag_sheet.update_timestamp(
+                    profile_name=user_profile.display_name
+                )
+
             user_table.insert(
                 user_uuid=user_id,
                 name=user_profile,
                 metadata="{}"
             )
+
             chat_history.insert(
                 user_uuid=user_id,
                 role="user",
-                content=message["text"],
+                content=message,
                 messenger_timestamp=timestamp
             )
+
             chat_history.insert(
                 user_uuid=user_id,
                 role="assistant",
                 content=response,
                 messenger_timestamp=timestamp
             )
-
-
-    # def get_user_profile(self, user_id: str):
-    #     """
-    #     Fetches the user profile from LINE using the user ID.
-        
-    #     Args:
-    #         user_id (str): The LINE user ID.
-        
-    #     Returns:
-    #         dict: User profile information.
-    #     """
-    #     headers = {
-    #         'Authorization': f'Bearer {self.channel_access_token}'
-    #     }
-    #     response = httpx.get(f'https://api.line.me/v2/bot/profile/{user_id}', headers=headers)
-    #     return response.json() if response.status_code == 200 else Noneimport timeimport time

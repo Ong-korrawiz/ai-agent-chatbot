@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel
 from src.utils.common import ConfigUtils
 from src._types import Message
+from src.utils.functions_calling import FunctionCallingUtils
 
 
 class BaseAgent:
@@ -107,3 +108,52 @@ class BaseAgent:
         except Exception as e:
             raise Exception(f"Error calling OpenAI API: {str(e)}")
 
+
+    def invoke_with_function_calling(
+            self,
+            input_messages: list[dict],
+            functions: callable = None,
+        ) -> str:
+        """
+        Send a prompt with function calling to OpenAI API and return the response.
+        
+        Args:
+            input_messages (list[dict]): List of messages to send
+            functions (list[dict]): List of functions to call
+            function_call (Optional[dict]): Specific function to call, if any
+            
+        Returns:
+            str: The AI's response content
+            
+        Raises:
+            Exception: If API call fails
+        """
+        messages = self.get_dict_messages()
+        messages.extend(
+            [{"role": msg.role, "content": msg.content} for msg in input_messages]
+        )
+        func_name = functions.__name__ 
+        print("Function name", func_name)
+        schema = FunctionCallingUtils.load_schema(func_name)
+        print("Schema", schema)
+        try:
+            response = self.client.responses.create(
+                model=self.model,
+                input=messages,
+                tools=[schema],
+                temperature=self.temperature,
+            )
+            print("RESPONSE", response)
+            resp_output = response.output[0]
+            print(resp_output.type)
+            match resp_output.type:
+                case "function_call":
+                    input_args = json.loads(resp_output.arguments)
+                    output_text = functions(**input_args)
+                case _:
+                    output_text = response.output[0].content[0].text
+            # returned_value = functions(**input_args)
+            return output_text
+
+        except Exception as e:
+            raise Exception(f"Error calling OpenAI API with function calling: {str(e)}")

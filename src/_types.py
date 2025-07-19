@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from dataclasses import dataclass
 
 class Message(BaseModel):
 
@@ -7,7 +8,7 @@ class Message(BaseModel):
     messenger_timestamp: str | None = None
 
 # Request Models.
-class MessengerWebhookRequestData(BaseModel):
+class MessengerWebhookData(BaseModel):
     object: str = ""
     entry: list = []
     previous_timestamp: str | None = None
@@ -44,4 +45,14 @@ class MessengerWebhookRequestData(BaseModel):
             return False
 
         return self.get_message_timestamp() == timestamp
-    
+
+@dataclass
+class ClientStatus:
+    IN_PROGRESS = "inprogress"
+    DONE = "done"
+
+
+@dataclass
+class Platform:
+    LINE = "line"
+    MESSENGER = "messenger"
