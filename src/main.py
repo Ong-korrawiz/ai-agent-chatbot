@@ -55,6 +55,7 @@ MESSAGE_HISTORY = MessageHistory()
 @app.post("/callback")
 async def callback(request: Request):
     x_line_signature = request.headers['X-Line-Signature']
+    print("Received request with X-Line-Signature:", x_line_signature)
     body = await request.body()
     body_str = body.decode('utf-8')
     
