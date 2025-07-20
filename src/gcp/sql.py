@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 
 from google.cloud.sql.connector import Connector, IPTypes
+from oauth2client.service_account import ServiceAccountCredentials
 
 import sqlalchemy
 import pg8000
@@ -17,6 +18,7 @@ from src.settings import (
     DB_USER,
     DB_PASSWORD,
     DB_NAME,
+    GOOGLE_API_CRED
 )
 from src.db import metadata, chat_history_table, user_table, all_tables_names
 from src._types import Message

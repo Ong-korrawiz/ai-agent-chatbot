@@ -1,9 +1,10 @@
 
 import pandas as pd
 import gspread
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 from pprint import pprint
-from src.settings import GCP_CREDENTIALS
+from src.settings import GOOGLE_API_CRED
 from src._types import ClientStatus, Platform
 
 from pydantic import BaseModel
@@ -26,7 +27,7 @@ class Sheet:
                       'https://www.googleapis.com/auth/spreadsheets',
                       "https://www.googleapis.com/auth/drive.file",
                       "https://www.googleapis.com/auth/drive"]
-        self.creds = ServiceAccountCredentials.from_json_keyfile_name(str(GCP_CREDENTIALS), self.scope)
+        self.creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(GOOGLE_API_CRED), self.scope)
         self.client = gspread.authorize(self.creds)
 
         self.speadsheet_name = spreadsheet_name
