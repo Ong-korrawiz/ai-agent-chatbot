@@ -64,6 +64,9 @@ async def callback(request: Request):
         print(f"Invalid signature error: {str(e)}")
         # Log the error for debugging
         logger.error(f"Invalid signature error: {str(e)}")
+        logger.error(f"Channel Access Token: {get_access_token}")
+        logger.error(f"Channel Secret: {get_channel_secret}")
+        logger.error(f"Request Body: {body_str}")
         print("Invalid signature. Please check your channel access token/channel secret.")
         raise HTTPException(status_code=400, detail="Invalid signature.")
 
