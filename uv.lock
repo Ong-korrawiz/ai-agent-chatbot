@@ -22,6 +22,7 @@ name = "ai-agent-chatbot"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "cloud-init-gen" },
     { name = "cloud-sql-python-connector" },
     { name = "fastapi", extra = ["standard"] },
     { name = "functions-framework" },
@@ -40,6 +41,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cloud-init-gen", specifier = ">=1.2.0" },
     { name = "cloud-sql-python-connector", specifier = ">=1.18.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.14" },
     { name = "functions-framework", specifier = ">=3.8.3" },
@@ -454,6 +456,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/60/6c/8ca2efa64cf75a977a0d7fac081354553ebe483345c734fb6b6515d96bbc/click-8.2.1.tar.gz", hash = "sha256:27c491cc05d968d271d5a1db13e3b5a184636d9d930f148c50b038f0d0646202", size = 286342, upload-time = "2025-05-20T23:19:49.832Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/85/32/10bb5764d90a8eee674e9dc6f4db6a0ab47c8c4d0d83c27f7c39ac415a4d/click-8.2.1-py3-none-any.whl", hash = "sha256:61a3265b914e850b85317d0b3109c7f8cd35a670f963866005d6ef1d5175a12b", size = 102215, upload-time = "2025-05-20T23:19:47.796Z" },
+]
+
+[[package]]
+name = "cloud-init-gen"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/0f/811e7b88af480365c189278489a5408ee97a6cc31c0d62fd8554ba566a18/cloud-init-gen-1.2.0.tar.gz", hash = "sha256:5fce051b4291b3ff8bfc469949aa50ddb57b8914ca760646257131057983f730", size = 16706, upload-time = "2022-04-06T06:36:35.497Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5d/aa/b111349a24f3bb031ec9cf2c03d2632819ce146a844d4d13c852e1457a56/cloud_init_gen-1.2.0-py3-none-any.whl", hash = "sha256:43376f2db0449799bbe38c628cb8cffd15e57db12021f3d82ea4ced7a9d70bf6", size = 18775, upload-time = "2022-04-06T06:36:36.915Z" },
 ]
 
 [[package]]
