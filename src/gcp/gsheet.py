@@ -6,6 +6,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 from pprint import pprint
 from src.settings import GOOGLE_API_CRED
 from src._types import ClientStatus, Platform
+from src.utils.common import ConfigUtils
+from src.utils.datetime_utils import day_diff
 
 from pydantic import BaseModel
 
@@ -126,12 +128,36 @@ class ClientTagSheet(Sheet):
         return False
     
     def get_user_id(self, profile_name: str) -> str:
+        """
+        Get user ID associated with a profile name.
+        Args:
+            profile_name (str): The name of the profile.
+        Returns:
+            str: User ID if found, None otherwise.
+        """
         sheet = self.get_sheet()
         cell = sheet.find(profile_name)
         if cell:
             return sheet.cell(cell.row, 4).value
         return None
-        
+
+
+    def get_in_progress_profiles(self) -> list[dict[str, any]]:
+        """
+        Get all profiles with status IN_PROGRESS.
+
+        Returns:
+            list[dict[str, any]]: List of profiles with status IN_PROGRESS.
+        """
+        df = self.get_content_as_dataframe()
+        in_progress_df = df[df['tag'] == ClientStatus.IN_PROGRESS]
+        date_diff_thresh = ConfigUtils.load_config().get('date_diff_threshold')
+        in_progress_df['date_diff'] = in_progress_df['last message timestamp'].apply(
+            lambda x: day_diff(x) if isinstance(x, str) else day_diff(pd.Timestamp(x).strftime('%Y-%m-%d'))
+        )
+        in_progress_df_w_thresh = in_progress_df[in_progress_df['date_diff'] >= date_diff_thresh]
+        in_progress_df_w_thresh = in_progress_df_w_thresh.reset_index(drop=True)
+        return in_progress_df_w_thresh.to_dict(orient='records') 
 
 
 if __name__ == "__main__":

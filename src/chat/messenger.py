@@ -10,10 +10,10 @@ from src.agents.customer_service import get_operator_agent
 from src.settings import MESSENGER_VERIFY_TOKEN
 from src.gcp.gsheet import ClientTagSheet
 from src.agents.functions import add_contact_info
+from src.chat import BaseChatApp
 
 
-
-class Messenger:
+class Messenger(BaseChatApp):
 # Helpers.
     def __init__(self, page_access_token: str = None, messenger_verify_token: str = MESSENGER_VERIFY_TOKEN):
         if not page_access_token:
@@ -45,7 +45,7 @@ class Messenger:
         page_access_token = self.page_access_token
 
         response = httpx.post(
-            "https://graph.facebook.com/v2.6/me/messages",
+            "https://graph.facebook.com/v23.0/me/messages",
             params={"access_token": page_access_token},
             headers={
                 "Content-Type": "application/json"
@@ -84,31 +84,93 @@ class Messenger:
             response.raise_for_status()  # Raises an exception for bad status codes
             return response.json()
 
+
+    async def is_getting_same_message(
+            self, 
+            chat_history: list[Message],
+            timestamp: str = None
+            ) -> bool:
+    
+
+            if chat_history:
+                last_message = chat_history[-1]
+                print(f"Last message timestamp: {last_message.messenger_timestamp}, Current timestamp: {timestamp}")
+
+                if str(last_message.messenger_timestamp).strip() == str(timestamp).strip():
+                    print("No new messages to process.")
+                    return True
+            else:
+                print("No previous messages found for this user.")
+                return False
+
+    async def get_bot_response(
+            self,
+            messages: List[Message],
+            sender_id: str = None,
+            ):
+        
+        """        Get a response from the bot based on the provided messages.
+        Args:
+            messages (List[Message]): List of messages to process.
+            sender_id (str): The ID of the sender.
+        Returns:
+            str: Response message.
+        """
+        operator_agent = get_operator_agent()
+        response = operator_agent.invoke_with_function_calling(
+            messages,
+            functions=add_contact_info
+        )
+        await self.send_message(
+            recipient_id=sender_id,
+            message_text=response
+        )
+
+            
+        print(f"Bot response: {response}")
+        return response
+
+    async def save_to_gsheet(
+            self,
+            name: str,
+            sender_id: str,
+    ):
+        """
+        Save user information to Google Sheets.
+        
+        Args:
+            name (str): The name of the user.
+            sender_id (str): The ID of the sender.
+        """
+        client_tag_sheet = ClientTagSheet()
+        if not client_tag_sheet.has_profle(name):
+            client_tag_sheet.add_new_profile(
+                profile_name=name,
+                user_id=sender_id,
+                platform=Platform.MESSENGER
+            )
+        else:
+            client_tag_sheet.update_timestamp(
+                profile_name=name
+            )
+
+
     async def send_message_to_messenger(self, data: MessengerWebhookData):
 
             if not data.object == "page":
                 return Response(status_code=200, content="Data object is not 'page'")
             timestamp = data.get_message_timestamp
             sender_id = data.get_sender_id
+            messages = chat_history.get_chat_history(sender_id)
 
             # Create tables if they do not exist
             chat_history = ChatHistoryTable()
-            messages = chat_history.get_chat_history(sender_id)
 
-            if messages:
-                last_message = messages[-1]
-                print(f"Last message timestamp: {last_message.messenger_timestamp}, Current timestamp: {timestamp}")
-
-                if str(last_message.messenger_timestamp).strip() == str(timestamp).strip():
-                    print("No new messages to process.")
-                    return Response(status_code=200, content="No new messages to process.")
+            if self.is_getting_same_message(sender_id, data, messages):
+                return Response(status_code=200, content="No new messages to process.")
 
 
             user_table = UserTable()
-            operator_agent = get_operator_agent()
-            client_tag_sheet = ClientTagSheet()
-    
-
 
             for entry in data.entry:
                 messaging_events = [
@@ -118,35 +180,22 @@ class Messenger:
                 for event in messaging_events:
                     message = event.get("message")
                     sender_id = event["sender"]["id"]
+                    profile_name = self.get_user_profile(sender_id)
 
                     if not messages:
                         messages = []
+                    
                     messages.append(Message(role="user", content=message["text"]))
 
-                    response = operator_agent.invoke_with_function_calling(
-                        # [Message(role="user", content=message["text"])]
-                        messages,
-                        functions=add_contact_info
-                        )
-                    # response = message['text']  # Mock response for testing
-                    profile_name = self.get_user_profile(sender_id)
-                    print("Profile Name:", profile_name['name'])
-                    await self.send_message(
-                                    recipient_id=sender_id,
-                                    message_text=response
-                                    )
-                    
-                    client_tag_sheet = ClientTagSheet()
-                    if not client_tag_sheet.has_profle(profile_name['name']):
-                        client_tag_sheet.add_new_profile(
-                            profile_name=profile_name['name'],
-                            user_id=sender_id,
-                            platform=Platform.MESSENGER
-                        )
-                    else:
-                        client_tag_sheet.update_timestamp(
-                            profile_name=profile_name['name']
-                        )
+                    response = await self.get_bot_response(
+                        messages=messages,
+                        sender_id=sender_id
+                    )
+
+                    self.save_to_gsheet(
+                        name=profile_name['name'],
+                        sender_id=sender_id
+                    )
 
                     user_table.insert(
                         user_uuid=sender_id,
@@ -165,3 +214,34 @@ class Messenger:
                         content=response,
                         messenger_timestamp=timestamp
                     )
+
+
+    async def send_follow_up_message(self, to, messages):
+        """
+        Send a message via Facebook Messenger using httpx
+    
+        Args:
+            access_token (str): Your Facebook Page access token
+            psid (str): Page-scoped ID of the recipient
+            message_text (str): The message to send
+        
+        Returns:
+            dict: JSON response from Facebook Graph API
+        """
+        url = "https://graph.facebook.com/v23.0/me/messages"
+    
+        # Form data as in the original cURL command
+        data = {
+            "recipient": f"{{'id':'{to}'}}",
+            "messaging_type": "RESPONSE",
+            "message": f"{{'text':'{messages}'}}",
+            "access_token": self.page_access_token
+        }
+    
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, data=data)
+        
+            response.raise_for_status()
+            return response.json()
+
+        

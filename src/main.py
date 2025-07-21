@@ -23,7 +23,7 @@ from linebot.v3.messaging import TextMessage, Emoji
 import logging
 from pprint import pprint
 
-from src._types import Message, MessengerWebhookData
+from src._types import Message, MessengerWebhookData, Platform
 from src.agents.customer_service import get_operator_agent
 from src.chat.messenger import Messenger
 from src.chat.line import LineApp
@@ -151,6 +151,51 @@ def handle_message(event: MessageEvent):
         reply_token=reply_token
     )
 
+
+@app.get("/")
+def read_root(request: Request):
+    print("Welcome to the AI Agent Chatbot!")
+    print(f"Request: {request.json()}")
+    return {"message": "Welcome to the AI Agent Chatbot!"}
+
+
+
+
+
+@app.get("/follow_up")
+async def follow_up(request: Request):
+
+    client_tag_sheet = ClientTagSheet()
+    in_progress_profiles = client_tag_sheet.get_in_progress_profiles()
+
+    platform = {
+        Platform.LINE: LineApp(
+            access_token=get_access_token,
+            channel_secret=get_channel_secret
+        ),
+        Platform.MESSENGER: Messenger(
+            page_access_token=MESSENGER_VERIFY_TOKEN
+        )
+    }
+
+    for profile in in_progress_profiles:
+        profile_name = profile.get('profile name')
+        user_id = profile.get('user id')
+        if not user_id:
+            print(f"User ID not found for profile {profile_name}. Skipping follow-up.")
+            continue
+        platform_type = profile.get('platform')
+
+        if platform_type in platform:
+            print(f"Sending follow-up message to {profile_name} on {platform_type}")
+            response = await platform[platform_type].send_follow_up_message(
+                to=user_id,
+                messages="This is a follow-up message."
+            )
+            print(f"Response: {response}")
+        else:
+            print(f"Platform {platform_type} not supported for profile {profile_name}")
+        # break
 
 
 if __name__ == "__main__":

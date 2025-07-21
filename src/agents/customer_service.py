@@ -36,7 +36,7 @@ def get_operator_agent() -> BaseAgent:
     # Create the operator agent
     operator_agent = BaseAgent(
         model=config.get('model', 'gpt-4o-mini-2024-07-18'),
-        temperature=config.get('temperature', 0.7),
+        temperature=config.get('temperature', 0),
         system_prompt=system_prompt
     )
     
