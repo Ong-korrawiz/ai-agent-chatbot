@@ -28,7 +28,7 @@ from src.agents.customer_service import get_operator_agent
 from src.chat.messenger import Messenger
 from src.chat.line import LineApp
 from src.gcp.sql import ChatHistoryTable, UserTable ,CloudSqlManager
-from src.gcp.gsheet import ClientTagSheet
+from src.gcp.gsheet import ClientTagSheet, ConfigSheet
 from src.agents.functions import add_contact_info
 # from src.db import ChatHistory, User
 from src.settings import MESSENGER_VERIFY_TOKEN

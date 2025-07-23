@@ -8,7 +8,7 @@ from src._types import Message, MessengerWebhookData, Platform
 from src.gcp.sql import ChatHistoryTable, UserTable
 from src.agents.customer_service import get_operator_agent
 from src.settings import MESSENGER_VERIFY_TOKEN
-from src.gcp.gsheet import ClientTagSheet
+from src.gcp.gsheet import ClientTagSheet, ConfigSheet
 from src.agents.functions import add_contact_info
 from src.chat import BaseChatApp
 
@@ -161,14 +161,15 @@ class Messenger(BaseChatApp):
                 return Response(status_code=200, content="Data object is not 'page'")
             timestamp = data.get_message_timestamp
             sender_id = data.get_sender_id
+
+            chat_history = ChatHistoryTable()
             messages = chat_history.get_chat_history(sender_id)
 
-            # Create tables if they do not exist
-            chat_history = ChatHistoryTable()
-
-            if self.is_getting_same_message(sender_id, data, messages):
+            if await self.is_getting_same_message(chat_history=messages, timestamp=timestamp):
                 return Response(status_code=200, content="No new messages to process.")
 
+            config_sheet = ConfigSheet()
+            is_working_hour = config_sheet.is_working_hour()
 
             user_table = UserTable()
 
@@ -185,14 +186,17 @@ class Messenger(BaseChatApp):
                     if not messages:
                         messages = []
                     
-                    messages.append(Message(role="user", content=message["text"]))
+                    if is_working_hour:
+                        messages.append(Message(role="user", content=message["text"]))
 
-                    response = await self.get_bot_response(
-                        messages=messages,
-                        sender_id=sender_id
-                    )
+                        response = await self.get_bot_response(
+                            messages=messages,
+                            sender_id=sender_id
+                        )
+                    else:
+                        print("Out of working hours. No response will be sent.")
 
-                    self.save_to_gsheet(
+                    await self.save_to_gsheet(
                         name=profile_name['name'],
                         sender_id=sender_id
                     )
@@ -208,12 +212,15 @@ class Messenger(BaseChatApp):
                         content=message["text"],
                         messenger_timestamp=timestamp
                     )
-                    chat_history.insert(
-                        user_uuid=sender_id,
-                        role="assistant",
-                        content=response,
-                        messenger_timestamp=timestamp
-                    )
+
+
+                    if is_working_hour:
+                        chat_history.insert(
+                            user_uuid=sender_id,
+                            role="assistant",
+                            content=response,
+                            messenger_timestamp=timestamp
+                        )
 
 
     async def send_follow_up_message(self, to, messages):

@@ -5,7 +5,7 @@ import uuid
 
 from src.settings import LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET
 from src.gcp.sql import ChatHistoryTable, UserTable, CloudSqlManager
-from src.gcp.gsheet import ClientTagSheet
+from src.gcp.gsheet import ClientTagSheet, ConfigSheet
 from src.agents.customer_service import get_operator_agent
 from src._types import Message, Platform
 from linebot.v3.messaging import (
@@ -19,6 +19,9 @@ from linebot.v3.messaging import (
 )
 from src.agents.functions import add_contact_info
 from src.chat import BaseChatApp
+from concurrent.futures import ThreadPoolExecutor
+
+
 
 class LineApp(BaseChatApp):
     def __init__(
@@ -96,6 +99,7 @@ class LineApp(BaseChatApp):
                 messages=[reply_message]
             )
         )
+        return response
 
 
     def save_to_gsheet(
@@ -125,33 +129,61 @@ class LineApp(BaseChatApp):
             message (str): The message to send.
             reply_token (str): The token to reply to the user.
         """
+
+        def get_chat_history():
+            chat_history = ChatHistoryTable()
+            return {
+                "table": chat_history, 
+                "chat_history": chat_history.get_chat_history(user_id)
+                }
+        def get_user_table():
+            user_table = UserTable()
+            return user_table
+        
+        config_sheet = ConfigSheet()
+        is_working_hour = config_sheet.is_working_hour()
+
+        if is_working_hour:
+
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                start_time = time.time()
+                f_chat_history_result = executor.submit(get_chat_history)
+                f_user_table = executor.submit(get_user_table)
+                chat_history_result = f_chat_history_result.result()
+                user_table = f_user_table.result()
+                chat_history = chat_history_result["table"]
+                messages_history = chat_history_result["chat_history"]
+                end_time = time.time()
+                print(f"Chat history fetched in {end_time - start_time:.2f} seconds")
+            
+        else:
+            print("Outside working hours, skipping chat history retrieval.")
+            messages_history = []
+            user_table = UserTable()
+
         timestamp = str(int(time.time()))
         user_profile = self.line_bot_api.get_profile(user_id)
- 
-        chat_history = ChatHistoryTable()
-        user_table = UserTable()
 
         with ApiClient(self.configuration) as api_client:
+            if is_working_hour:
+                messages = messages_history + [Message(role="user", content=message)]
 
-            messages_history = chat_history.get_chat_history(user_id)
-            messages = messages_history + [Message(role="user", content=message)]
-
-            self.get_bot_response(
-                messages=messages,
-                api_client=api_client,
-                reply_token=reply_token
-            )
+                response = self.get_bot_response(
+                    messages=messages,
+                    api_client=api_client,
+                    reply_token=reply_token
+                )
+            else:
+                print("Outside working hours skip bot response generation.")
 
             self.save_to_gsheet(
                 user_id=user_id,
                 display_name=user_profile.display_name
             )
 
-
-
             user_table.insert(
                 user_uuid=user_id,
-                name=user_profile,
+                name=user_profile.display_name,
                 metadata="{}"
             )
 
@@ -162,12 +194,13 @@ class LineApp(BaseChatApp):
                 messenger_timestamp=timestamp
             )
 
-            chat_history.insert(
-                user_uuid=user_id,
-                role="assistant",
-                content=response,
-                messenger_timestamp=timestamp
-            )
+            if is_working_hour:
+                chat_history.insert(
+                    user_uuid=user_id,
+                    role="assistant",
+                    content=response,
+                    messenger_timestamp=timestamp
+                )
 
 if __name__ == "__main__":
     import asyncio

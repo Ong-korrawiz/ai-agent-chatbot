@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 
 def day_diff(input_date: str) -> int:
@@ -40,3 +40,15 @@ def day_diff(input_date: str) -> int:
     # Calculate difference
     diff = (today - target_date).days
     return max(diff, 0)  # Ensure non-negative result
+
+
+def get_thai_time() -> str:
+    """
+    Get the current time in Thailand (UTC+7) in HH:MM format.
+    
+    Returns:
+        str: Current time in Thailand.
+    """
+    now = datetime.utcnow()
+    thai_time = now + timedelta(hours=7)
+    return thai_time.strftime("%H:%M")

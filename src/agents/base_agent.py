@@ -148,6 +148,7 @@ class BaseAgent:
             print(resp_output.type)
             match resp_output.type:
                 case "function_call":
+                    print(f"Input arguments: {resp_output.arguments}")
                     input_args = json.loads(resp_output.arguments)
                     output_text = functions(**input_args)
                 case _:
@@ -156,4 +157,5 @@ class BaseAgent:
             return output_text
 
         except Exception as e:
-            raise Exception(f"Error calling OpenAI API with function calling: {str(e)}")
+            # raise Exception(f"Error calling OpenAI API with function calling: {str(e)}")
+            return "ทำรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"
